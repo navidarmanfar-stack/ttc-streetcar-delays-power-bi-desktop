@@ -1,0 +1,6 @@
+/// Folder that holds the CSV files in /data. Change it under Transform data > Edit parameters.
+expression DataFolder = "C:\TTC Streetcar Delays PBI\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 96033ed8-36ba-4ee2-a815-b97f6ce80918
+
+	annotation PBI_ResultType = Text
+

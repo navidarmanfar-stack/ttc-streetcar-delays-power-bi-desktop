@@ -1,0 +1,22 @@
+Route Name,Route Number,Route,Service,Status,Route Order
+301 Queen Night,301,Queen Night,Night,Active,301
+303 Kingston Rd Night,303,Kingston Rd Night,Night,Active,303
+304 King Night,304,King Night,Night,Active,304
+305 Dundas Night,305,Dundas Night,Night,Active,305
+306 Carlton Night,306,Carlton Night,Night,Active,306
+310 Spadina Night,310,Spadina Night,Night,Active,310
+312 St. Clair Night,312,St. Clair Night,Night,Active,312
+501 Queen,501,Queen,Day,Active,501
+502 Downtowner,502,Downtowner,Day,Retired,502
+503 Kingston Rd,503,Kingston Rd,Day,Active,503
+504 King,504,King,Day,Active,504
+505 Dundas,505,Dundas,Day,Active,505
+506 Carlton,506,Carlton,Day,Active,506
+507 Long Branch,507,Long Branch,Day,Active,507
+508 Lake Shore,508,Lake Shore,Day,Active,508
+509 Harbourfront,509,Harbourfront,Day,Active,509
+510 Spadina,510,Spadina,Day,Active,510
+511 Bathurst,511,Bathurst,Day,Active,511
+512 St. Clair,512,St. Clair,Day,Active,512
+514 Cherry,514,Cherry,Day,Retired,514
+Other / Unknown,,Other / Unknown,Other,n/a,999

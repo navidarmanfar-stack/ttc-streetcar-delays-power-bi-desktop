@@ -1,0 +1,31 @@
+/// Disconnected selector for [Selected Metric].
+table Metric
+	lineageTag: 6b3effd4-d71d-4e6a-b72e-f4afe62df873
+
+	column Metric
+		lineageTag: 8b1f47e8-51e4-4eb9-ad96-15fefa2fa0c2
+		summarizeBy: none
+		sourceColumn: [Metric]
+		sortByColumn: 'Metric Order'
+
+	column 'Metric Order'
+		isHidden
+		formatString: 0
+		lineageTag: 64c30565-1726-4d68-8a4d-21ef9ffcbd8d
+		summarizeBy: none
+		sourceColumn: [Metric Order]
+
+	partition Metric = calculated
+		mode: import
+		source =
+				DATATABLE (
+				    "Metric", STRING,
+				    "Metric Order", INTEGER,
+				    {
+				        { "Incidents", 1 },
+				        { "Delay hours", 2 },
+				        { "Avg delay (min)", 3 },
+				        { "% severe", 4 }
+				    }
+				)
+

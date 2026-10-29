@@ -1,0 +1,213 @@
+/// Measure table. Measures are grouped in display folders.
+table _Measures
+	lineageTag: 4c3ccf49-e8e7-448a-948b-41640310deb7
+
+	/// Number of delay incidents.
+	measure Incidents = COUNTROWS ( Delays )
+		formatString: #,0
+		displayFolder: 1 Core
+		lineageTag: 0692d5ae-d602-4be8-bffb-4d5f31f6f737
+
+	measure 'Total Delay (min)' = SUM ( Delays[Min Delay] )
+		formatString: #,0
+		displayFolder: 1 Core
+		lineageTag: debce9e5-94da-4193-bf45-b53bb0ac6dc0
+
+	/// Total minutes of delay to following streetcars, in hours.
+	measure 'Delay Hours' = DIVIDE ( [Total Delay (min)], 60 )
+		formatString: #,0
+		displayFolder: 1 Core
+		lineageTag: c3250221-e05b-4908-87e9-93e8ebb8f0f0
+
+	measure 'Avg Delay (min)' = AVERAGE ( Delays[Min Delay] )
+		formatString: 0.0
+		displayFolder: 1 Core
+		lineageTag: 7b3e397c-834a-484e-aff3-fb42a12e3f48
+
+	measure 'Median Delay (min)' = MEDIAN ( Delays[Min Delay] )
+		formatString: 0.0
+		displayFolder: 1 Core
+		lineageTag: 7719e2d7-8612-49a5-b98c-b1d4e9baa612
+
+	/// 9 in 10 delays are this long or shorter.
+	measure 'P90 Delay (min)' = PERCENTILEX.INC ( Delays, Delays[Min Delay], 0.9 )
+		formatString: 0.0
+		displayFolder: 1 Core
+		lineageTag: 7c2da2bb-fa72-44f5-a47f-22be3a92deaf
+
+	measure 'Avg Gap (min)' = AVERAGE ( Delays[Min Gap] )
+		formatString: 0.0
+		displayFolder: 1 Core
+		lineageTag: cb39440f-7818-4c9d-a414-a601cd634e2c
+
+	/// Minutes that count as severe (what-if parameter, default 30).
+	measure 'Severity Threshold Value' = SELECTEDVALUE ( 'Severity Threshold'[Severity Threshold], 30 )
+		formatString: 0
+		displayFolder: 2 Severity
+		lineageTag: f473f6ff-cf9f-4e60-a5fb-6e9c4669003d
+
+	measure 'Severe Incidents' =
+			VAR _Threshold = [Severity Threshold Value]
+			RETURN
+			    CALCULATE ( [Incidents], Delays[Min Delay] >= _Threshold )
+		formatString: #,0
+		displayFolder: 2 Severity
+		lineageTag: 5463c140-a4fa-4dad-8753-92ee3d81b7b4
+
+	/// Share of incidents at or above the severity threshold.
+	measure '% Severe' = DIVIDE ( [Severe Incidents], [Incidents] )
+		formatString: 0.0%
+		displayFolder: 2 Severity
+		lineageTag: 8dff8074-d0f2-43a8-8b90-6a7454bf67fc
+
+	measure 'Days in Period' = CALCULATE ( COUNTROWS ( 'Date' ), 'Date'[Is In Data] )
+		formatString: #,0
+		displayFolder: 3 Rates
+		lineageTag: ea3a62cb-1154-4804-a16e-3b44945a9033
+
+	/// Per calendar day with data, so partial years compare fairly.
+	measure 'Incidents per Day' = DIVIDE ( [Incidents], [Days in Period] )
+		formatString: 0.0
+		displayFolder: 3 Rates
+		lineageTag: 06a27dfa-b4ce-4fe4-907b-bd26657a7540
+
+	measure 'Incidents PY' = CALCULATE ( [Incidents], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+		formatString: #,0
+		displayFolder: 4 Time intelligence
+		lineageTag: 4fb3a6e2-5109-4205-8815-a46892220c64
+
+	measure 'Incidents YoY %' =
+			VAR _Prior = [Incidents PY]
+			RETURN
+			    IF ( NOT ISBLANK ( _Prior ), DIVIDE ( [Incidents] - _Prior, _Prior ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 4 Time intelligence
+		lineageTag: 67bef418-cd69-44a8-8795-4cc1a595f746
+
+	measure 'Incidents YTD' = CALCULATE ( [Incidents], CALCULATETABLE ( DATESYTD ( 'Date'[Date] ), 'Date'[Is In Data] ) )
+		formatString: #,0
+		displayFolder: 4 Time intelligence
+		lineageTag: f81551d4-44fd-4bc0-a0af-c4250d685af1
+
+	/// Same days of the prior year, so a partial current year compares like-for-like.
+	measure 'Incidents PYTD' =
+			CALCULATE (
+			    [Incidents],
+			    SAMEPERIODLASTYEAR ( CALCULATETABLE ( DATESYTD ( 'Date'[Date] ), 'Date'[Is In Data] ) )
+			)
+		formatString: #,0
+		displayFolder: 4 Time intelligence
+		lineageTag: 5dadaa25-2823-4d26-963a-0b81aac05d78
+
+	measure 'Incidents YTD vs PY %' = DIVIDE ( [Incidents YTD] - [Incidents PYTD], [Incidents PYTD] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 4 Time intelligence
+		lineageTag: e41256b8-e99f-4031-8066-141747f3d6dd
+
+	measure 'Incidents Rolling 12M' = CALCULATE ( [Incidents], DATESINPERIOD ( 'Date'[Date], MAX ( 'Date'[Date] ), -12, MONTH ) )
+		formatString: #,0
+		displayFolder: 4 Time intelligence
+		lineageTag: 9a836ae3-3ea5-49b4-82b1-29cfaea4c13b
+
+	measure 'Avg Delay YoY (min)' =
+			VAR _Prior = CALCULATE ( [Avg Delay (min)], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+			RETURN
+			    IF ( NOT ISBLANK ( _Prior ), [Avg Delay (min)] - _Prior )
+		formatString: +0.0;-0.0;0.0
+		displayFolder: 4 Time intelligence
+		lineageTag: 4c937e6d-0c72-4e4e-b640-0cdc53faa542
+
+	/// Value of the metric picked in the Metric slicer.
+	measure 'Selected Metric' =
+			SWITCH (
+			    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+			    "Incidents", [Incidents],
+			    "Delay hours", [Delay Hours],
+			    "Avg delay (min)", [Avg Delay (min)],
+			    "% severe", [% Severe]
+			)
+		displayFolder: 5 Selector
+		lineageTag: c7845865-7293-46cb-ae25-4707972a0a41
+
+		formatStringDefinition =
+				SWITCH (
+				    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+				    "% severe", "0.0%",
+				    "Avg delay (min)", "0.0",
+				    "#,0"
+				)
+
+	/// Trailing 12-month average of the selected metric.
+	measure 'Selected Metric (12M avg)' =
+			CALCULATE (
+			    AVERAGEX ( VALUES ( 'Date'[Month Start] ), [Selected Metric] ),
+			    DATESINPERIOD ( 'Date'[Date], MAX ( 'Date'[Date] ), -12, MONTH )
+			)
+		displayFolder: 5 Selector
+		lineageTag: 6d043cde-e926-466e-b1b2-39ca79862c2e
+
+		formatStringDefinition =
+				SWITCH (
+				    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+				    "% severe", "0.0%",
+				    "Avg delay (min)", "0.0",
+				    "#,0"
+				)
+
+	measure 'Route Rank (Delay Hours)' =
+			IF (
+			    HASONEVALUE ( Route[Route Name] ),
+			    RANKX ( ALL ( Route[Route Name] ), [Delay Hours], , DESC, DENSE )
+			)
+		formatString: 0
+		displayFolder: 6 Ranking
+		lineageTag: cfb66d33-402c-4196-8c35-fedb8796dc81
+
+	measure 'Selected Route' = SELECTEDVALUE ( Route[Route Name], "All routes" )
+		displayFolder: 7 Labels & formatting
+		lineageTag: 4acec967-4448-4288-8ff3-449dc56db871
+
+	measure 'Report Subtitle' =
+			VAR _Years =
+			    IF ( ISFILTERED ( 'Date'[Year] ), CONCATENATEX ( VALUES ( 'Date'[Year] ), 'Date'[Year], ", " ), "Jan 2014 ΓÇô Aug 2026" )
+			RETURN
+			    _Years & " ┬╖ " & FORMAT ( [Incidents], "#,0" ) & " incidents ┬╖ " & FORMAT ( [Delay Hours], "#,0" ) & " hours of delay"
+		displayFolder: 7 Labels & formatting
+		lineageTag: 2ad54782-2042-4204-b75c-e6b2a4dfbcad
+
+	/// Red when incidents rose vs the prior year, green when they fell.
+	measure 'YoY Colour' = IF ( [Incidents YoY %] > 0, "#DA291C", "#00923F" )
+		displayFolder: 7 Labels & formatting
+		lineageTag: 41f116e9-5048-48de-8dc6-02467a35f638
+
+	/// Share of incidents whose location could be placed on the map.
+	measure '% Incidents Mapped' = DIVIDE ( CALCULATE ( [Incidents], Location[Mapped] = "Yes" ), [Incidents] )
+		formatString: 0.0%
+		displayFolder: 8 Map
+		lineageTag: a3a62765-08fc-454c-8cff-4c010715860a
+
+	measure 'Last Data Date' = CALCULATE ( MAX ( Delays[Date] ), REMOVEFILTERS () )
+		formatString: mmm d, yyyy
+		displayFolder: 9 Data quality
+		lineageTag: f2efffc3-f015-4934-84cd-61cda8614e1b
+
+	measure '% Unknown Cause' = DIVIDE ( CALCULATE ( [Incidents], Cause[Cause Category] IN { "Unknown", "Other / Miscellaneous" } ), [Incidents] )
+		formatString: 0.0%
+		displayFolder: 9 Data quality
+		lineageTag: 44c66ff3-4158-4fd3-8b76-614082470acb
+
+	measure 'Incidents (Top 15 Locations)' = IF ( ISINSCOPE ( Location[Location] ), IF ( RANKX ( ALLSELECTED ( Location[Location] ), [Incidents], , DESC, DENSE ) <= 15, [Incidents] ), [Incidents] )
+		lineageTag: e3482e9b-2901-4b2e-83fc-6f70a18c1309
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Value
+		isHidden
+		lineageTag: 35ff6c7d-71c6-402c-aa80-2fa2641d0b1a
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = { 1 }
+

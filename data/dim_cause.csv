@@ -1,0 +1,14 @@
+Cause Category,Cause Group,TTC Controllable,Definition,Cause Order,Cause Group Order
+Mechanical / Equipment,Vehicle & track,Yes,Streetcar breakdowns and equipment faults.,1,1
+Infrastructure (Track/Overhead),Vehicle & track,Yes,"Rail, switch and overhead-wire problems.",2,1
+Operations,Service operations,Yes,"Late leaving the garage, short turns, crew and scheduling issues.",3,2
+Diversion,Service operations,Yes,"Streetcars diverted around construction, events or blockages.",4,2
+General Delay,Service operations,Yes,Delays the TTC logged without a specific cause.,5,2
+Security,Passengers & public,No,"Disorderly or unwell passengers, security incidents.",6,3
+Cleaning / Unsanitary,Passengers & public,No,Vehicles taken out of service to be cleaned.,7,3
+Emergency Services,Passengers & public,No,"Police, fire or paramedic activity on the route.",8,3
+Investigation,Passengers & public,No,Incidents held for investigation.,9,3
+Held / Blocked,Street & traffic,No,"Track blocked by vehicles, traffic or other obstructions.",10,4
+Collision,Street & traffic,No,Collisions involving a streetcar.,11,4
+Other / Miscellaneous,Other,No,2025+ delay codes outside the categories above.,12,5
+Unknown,Other,No,No usable cause recorded.,13,5

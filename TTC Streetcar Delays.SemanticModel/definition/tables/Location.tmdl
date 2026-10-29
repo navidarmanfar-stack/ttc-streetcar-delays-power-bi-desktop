@@ -1,0 +1,55 @@
+/// Delay locations, with coordinates where the name matched a TTC stop.
+table Location
+	lineageTag: d6cc7066-ee44-4e38-87a4-285fc86514e0
+
+	column Location
+		dataType: string
+		isKey
+		lineageTag: 42d85130-c808-4cf3-8ffa-98aba49af5d4
+		summarizeBy: none
+		sourceColumn: Location
+
+	column Latitude
+		dataType: double
+		formatString: 0.00000
+		lineageTag: 46fd228f-32ec-4968-8b64-a8ad58e369b4
+		dataCategory: Latitude
+		summarizeBy: average
+		sourceColumn: Latitude
+
+		annotation SummarizationSetBy = User
+
+	column Longitude
+		dataType: double
+		formatString: 0.00000
+		lineageTag: 979dbc21-681e-4276-8fcf-2e35617ad6b8
+		dataCategory: Longitude
+		summarizeBy: average
+		sourceColumn: Longitude
+
+		annotation SummarizationSetBy = User
+
+	column 'Location Type'
+		dataType: string
+		lineageTag: 1ae19012-1f81-4abc-8669-84c49a448261
+		summarizeBy: none
+		sourceColumn: Location Type
+
+	/// Yes when the location name matched a TTC stop (or a known yard/loop).
+	column Mapped
+		dataType: string
+		lineageTag: 1420c62c-658f-4bd5-acf5-87dab6a9b124
+		summarizeBy: none
+		sourceColumn: Mapped
+
+	partition Location = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_location.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"Location", type text}, {"Longitude", type number}, {"Latitude", type number}, {"Location Type", type text}, {"Mapped", type text}}, "en-US"),
+				    Trimmed = Table.TransformColumns(Typed, {{"Location", Text.Trim, type text}})
+				in
+				    Trimmed
+

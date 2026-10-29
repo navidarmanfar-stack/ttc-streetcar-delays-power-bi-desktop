@@ -1,0 +1,40 @@
+/// Hours of the day with service bands (AM peak 6ΓÇô10, PM peak 15ΓÇô19).
+table 'Time of Day'
+	lineageTag: 7ff6e18e-1d0d-44a4-beaf-90ba88951f3e
+
+	column Hour
+		formatString: 0
+		lineageTag: ee493fed-cc4f-4a94-b575-9e378ae31d5c
+		summarizeBy: none
+		sourceColumn: [Hour]
+
+	column 'Hour Label'
+		lineageTag: 2e987496-3a74-4abc-9251-e591c39f326d
+		summarizeBy: none
+		sourceColumn: [Hour Label]
+		sortByColumn: Hour
+
+	column 'Time Band'
+		lineageTag: 9f74b4a8-a2ba-4bbf-a694-3321d31455dd
+		summarizeBy: none
+		sourceColumn: [Time Band]
+		sortByColumn: 'Time Band Order'
+
+	column 'Time Band Order'
+		isHidden
+		formatString: 0
+		lineageTag: 11f06102-ec32-4c5d-9a69-6108b69a6c2e
+		summarizeBy: none
+		sourceColumn: [Time Band Order]
+
+	partition 'Time of Day' = calculated
+		mode: import
+		source =
+				SELECTCOLUMNS (
+				    GENERATESERIES ( 0, 23, 1 ),
+				    "Hour", CONVERT ( [Value], INTEGER ),
+				    "Hour Label", FORMAT ( TIME ( [Value], 0, 0 ), "hh:00" ),
+				    "Time Band", SWITCH ( TRUE (), [Value] < 6, "Overnight", [Value] < 10, "AM peak", [Value] < 15, "Midday", [Value] < 19, "PM peak", "Evening" ),
+				    "Time Band Order", SWITCH ( TRUE (), [Value] < 6, 5, [Value] < 10, 1, [Value] < 15, 2, [Value] < 19, 3, 4 )
+				)
+

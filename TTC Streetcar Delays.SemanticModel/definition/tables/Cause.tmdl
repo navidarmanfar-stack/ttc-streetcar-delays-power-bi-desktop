@@ -1,0 +1,58 @@
+/// Harmonised delay causes. 2025+ TTC codes are mapped onto the pre-2025 categories.
+table Cause
+	lineageTag: c720218f-afc4-40ad-864f-771cdbe54771
+
+	column 'Cause Category'
+		dataType: string
+		isKey
+		lineageTag: e6223826-e1e9-40da-bca2-d317a1c18b9a
+		summarizeBy: none
+		sourceColumn: Cause Category
+		sortByColumn: 'Cause Order'
+
+	column 'Cause Group'
+		dataType: string
+		lineageTag: 78dafb9a-1c9c-4c9a-8e18-23578308fc7d
+		summarizeBy: none
+		sourceColumn: Cause Group
+		sortByColumn: 'Cause Group Order'
+
+	/// Analyst classification: can the TTC act on this cause directly?
+	column 'TTC Controllable'
+		dataType: string
+		lineageTag: 58457a19-0702-49c1-aa78-13eeb38606bf
+		summarizeBy: none
+		sourceColumn: TTC Controllable
+
+	column Definition
+		dataType: string
+		lineageTag: 0cab9de6-d6f0-4659-af50-a886842586d5
+		summarizeBy: none
+		sourceColumn: Definition
+
+	column 'Cause Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c653c12d-74e7-4bb2-b05a-97cd5c8f59d0
+		summarizeBy: none
+		sourceColumn: Cause Order
+
+	column 'Cause Group Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e13707b9-f40a-4ab3-bc96-169fac830293
+		summarizeBy: none
+		sourceColumn: Cause Group Order
+
+	partition Cause = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_cause.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"Cause Category", type text}, {"Cause Group", type text}, {"TTC Controllable", type text}, {"Definition", type text}, {"Cause Order", Int64.Type}, {"Cause Group Order", Int64.Type}}, "en-US")
+				in
+				    Typed
+

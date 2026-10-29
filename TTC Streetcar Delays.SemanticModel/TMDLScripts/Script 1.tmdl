@@ -1,0 +1,639 @@
+createOrReplace
+
+	/// Folder that holds the CSV files in /data. Change it under Transform data > Edit parameters.
+	expression DataFolder = "C:\TTC Streetcar Delays PBI\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	/// Fact table: one row per streetcar delay incident, Jan 2014 ΓÇô Aug 2026.
+	table Delays
+
+		column Date
+			dataType: dateTime
+			isHidden
+			formatString: yyyy-mm-dd
+			summarizeBy: none
+			sourceColumn: Date
+
+		column Hour
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Hour
+
+		column 'Route Name'
+			dataType: string
+			isHidden
+			summarizeBy: none
+			sourceColumn: Route Name
+
+		column Location
+			dataType: string
+			isHidden
+			summarizeBy: none
+			sourceColumn: Location
+
+		column 'Cause Category'
+			dataType: string
+			isHidden
+			summarizeBy: none
+			sourceColumn: Cause Category
+
+		/// TTC incident text before 2025; delay code (with description where known) from 2025.
+		column 'Incident Detail'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Incident Detail
+
+		/// Minutes the following streetcar was delayed.
+		column 'Min Delay'
+			dataType: int64
+			isHidden
+			formatString: #,0
+			summarizeBy: none
+			sourceColumn: Min Delay
+
+		/// Scheduled minutes between this streetcar and the one ahead.
+		column 'Min Gap'
+			dataType: int64
+			isHidden
+			formatString: #,0
+			summarizeBy: none
+			sourceColumn: Min Gap
+
+		column Direction
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Direction
+
+		column Vehicle
+			dataType: int64
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Vehicle
+
+		/// Delay length bucket, added in Power Query.
+		column 'Delay Band'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Delay Band
+			sortByColumn: 'Delay Band Order'
+
+		column 'Delay Band Order'
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Delay Band Order
+
+		partition Delays = m
+			mode: import
+			source =
+					let
+					    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\ttc_streetcar_delays_clean.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					    Selected = Table.SelectColumns(Promoted, {"Date", "Hour", "Route Name", "Location", "Cause Category", "Incident Detail", "Min Delay", "Min Gap", "Direction", "Vehicle"}),
+					    Typed = Table.TransformColumnTypes(Selected, {{"Date", type date}, {"Hour", Int64.Type}, {"Route Name", type text}, {"Location", type text}, {"Cause Category", type text}, {"Incident Detail", type text}, {"Min Delay", Int64.Type}, {"Min Gap", Int64.Type}, {"Direction", type text}, {"Vehicle", Int64.Type}}, "en-US"),
+					    Trimmed = Table.TransformColumns(Typed, {{"Location", Text.Trim, type text}, {"Incident Detail", Text.Trim, type text}}),
+					    Banded = Table.AddColumn(Trimmed, "Delay Band", each if [Min Delay] = 0 then "0 min" else if [Min Delay] < 10 then "1ΓÇô9 min" else if [Min Delay] < 20 then "10ΓÇô19 min" else if [Min Delay] < 30 then "20ΓÇô29 min" else if [Min Delay] < 60 then "30ΓÇô59 min" else "60+ min", type text),
+					    BandOrder = Table.AddColumn(Banded, "Delay Band Order", each if [Min Delay] = 0 then 0 else if [Min Delay] < 10 then 1 else if [Min Delay] < 20 then 2 else if [Min Delay] < 30 then 3 else if [Min Delay] < 60 then 4 else 5, Int64.Type)
+					in
+					    BandOrder
+
+	/// Streetcar routes: day (500s) and night (300s) service; 502 and 514 are retired.
+	table Route
+
+		column 'Route Name'
+			dataType: string
+			isKey
+			summarizeBy: none
+			sourceColumn: Route Name
+			sortByColumn: 'Route Order'
+
+		column 'Route Number'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Route Number
+
+		column Route
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Route
+
+		column Service
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Service
+
+		column Status
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Status
+
+		column 'Route Order'
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Route Order
+
+		partition Route = m
+			mode: import
+			source =
+					let
+					    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_route.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					    Typed = Table.TransformColumnTypes(Promoted, {{"Route Name", type text}, {"Route Number", type text}, {"Route", type text}, {"Service", type text}, {"Status", type text}, {"Route Order", Int64.Type}}, "en-US")
+					in
+					    Typed
+
+	/// Harmonised delay causes. 2025+ TTC codes are mapped onto the pre-2025 categories.
+	table Cause
+
+		column 'Cause Category'
+			dataType: string
+			isKey
+			summarizeBy: none
+			sourceColumn: Cause Category
+			sortByColumn: 'Cause Order'
+
+		column 'Cause Group'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Cause Group
+			sortByColumn: 'Cause Group Order'
+
+		/// Analyst classification: can the TTC act on this cause directly?
+		column 'TTC Controllable'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: TTC Controllable
+
+		column Definition
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Definition
+
+		column 'Cause Order'
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Cause Order
+
+		column 'Cause Group Order'
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: Cause Group Order
+
+		partition Cause = m
+			mode: import
+			source =
+					let
+					    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_cause.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					    Typed = Table.TransformColumnTypes(Promoted, {{"Cause Category", type text}, {"Cause Group", type text}, {"TTC Controllable", type text}, {"Definition", type text}, {"Cause Order", Int64.Type}, {"Cause Group Order", Int64.Type}}, "en-US")
+					in
+					    Typed
+
+	/// Delay locations, with coordinates where the name matched a TTC stop.
+	table Location
+
+		column Location
+			dataType: string
+			isKey
+			summarizeBy: none
+			sourceColumn: Location
+
+		column Latitude
+			dataType: double
+			formatString: 0.00000
+			dataCategory: Latitude
+			summarizeBy: none
+			sourceColumn: Latitude
+
+		column Longitude
+			dataType: double
+			formatString: 0.00000
+			dataCategory: Longitude
+			summarizeBy: none
+			sourceColumn: Longitude
+
+		column 'Location Type'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Location Type
+
+		/// Yes when the location name matched a TTC stop (or a known yard/loop).
+		column Mapped
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Mapped
+
+		partition Location = m
+			mode: import
+			source =
+					let
+					    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_location.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					    Typed = Table.TransformColumnTypes(Promoted, {{"Location", type text}, {"Longitude", type number}, {"Latitude", type number}, {"Location Type", type text}, {"Mapped", type text}}, "en-US"),
+					    Trimmed = Table.TransformColumns(Typed, {{"Location", Text.Trim, type text}})
+					in
+					    Trimmed
+
+	/// Calendar table (DAX), full years covering the data. Marked as the date table.
+	table Date
+		dataCategory: Time
+
+		column Date
+			isKey
+			formatString: yyyy-mm-dd
+			summarizeBy: none
+			sourceColumn: [Date]
+
+		column Year
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Year]
+
+		column 'Month Number'
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Month Number]
+
+		column Month
+			summarizeBy: none
+			sourceColumn: [Month]
+			sortByColumn: 'Month Number'
+
+		column 'Month Start'
+			formatString: mmm yyyy
+			summarizeBy: none
+			sourceColumn: [Month Start]
+
+		column Quarter
+			summarizeBy: none
+			sourceColumn: [Quarter]
+
+		column 'Weekday Number'
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Weekday Number]
+
+		column Weekday
+			summarizeBy: none
+			sourceColumn: [Weekday]
+			sortByColumn: 'Weekday Number'
+
+		column 'Day Type'
+			summarizeBy: none
+			sourceColumn: [Day Type]
+
+		column Season
+			summarizeBy: none
+			sourceColumn: [Season]
+
+		/// TRUE up to the last date with data; keeps YTD comparisons like-for-like.
+		column 'Is In Data'
+			isHidden
+			summarizeBy: none
+			sourceColumn: [Is In Data]
+
+		partition Date = calculated
+			mode: import
+			source =
+					VAR _First = DATE ( YEAR ( MIN ( Delays[Date] ) ), 1, 1 )
+					VAR _Last = DATE ( YEAR ( MAX ( Delays[Date] ) ), 12, 31 )
+					VAR _LastData = MAX ( Delays[Date] )
+					RETURN
+					    ADDCOLUMNS (
+					        CALENDAR ( _First, _Last ),
+					        "Year", YEAR ( [Date] ),
+					        "Month Number", MONTH ( [Date] ),
+					        "Month", FORMAT ( [Date], "mmm" ),
+					        "Month Start", DATE ( YEAR ( [Date] ), MONTH ( [Date] ), 1 ),
+					        "Quarter", "Q" & QUARTER ( [Date] ),
+					        "Weekday Number", WEEKDAY ( [Date], 2 ),
+					        "Weekday", FORMAT ( [Date], "ddd" ),
+					        "Day Type", IF ( WEEKDAY ( [Date], 2 ) >= 6, "Weekend", "Weekday" ),
+					        "Season", SWITCH ( TRUE (), MONTH ( [Date] ) IN { 12, 1, 2 }, "Winter", MONTH ( [Date] ) IN { 3, 4, 5 }, "Spring", MONTH ( [Date] ) IN { 6, 7, 8 }, "Summer", "Fall" ),
+					        "Is In Data", [Date] <= _LastData
+					    )
+
+	/// Hours of the day with service bands (AM peak 6ΓÇô10, PM peak 15ΓÇô19).
+	table 'Time of Day'
+
+		column Hour
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Hour]
+
+		column 'Hour Label'
+			summarizeBy: none
+			sourceColumn: [Hour Label]
+			sortByColumn: Hour
+
+		column 'Time Band'
+			summarizeBy: none
+			sourceColumn: [Time Band]
+			sortByColumn: 'Time Band Order'
+
+		column 'Time Band Order'
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Time Band Order]
+
+		partition 'Time of Day' = calculated
+			mode: import
+			source =
+					SELECTCOLUMNS (
+					    GENERATESERIES ( 0, 23, 1 ),
+					    "Hour", CONVERT ( [Value], INTEGER ),
+					    "Hour Label", FORMAT ( TIME ( [Value], 0, 0 ), "hh:00" ),
+					    "Time Band", SWITCH ( TRUE (), [Value] < 6, "Overnight", [Value] < 10, "AM peak", [Value] < 15, "Midday", [Value] < 19, "PM peak", "Evening" ),
+					    "Time Band Order", SWITCH ( TRUE (), [Value] < 6, 5, [Value] < 10, 1, [Value] < 15, 2, [Value] < 19, 3, 4 )
+					)
+
+	/// Disconnected selector for [Selected Metric].
+	table Metric
+
+		column Metric
+			summarizeBy: none
+			sourceColumn: [Metric]
+			sortByColumn: 'Metric Order'
+
+		column 'Metric Order'
+			isHidden
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Metric Order]
+
+		partition Metric = calculated
+			mode: import
+			source =
+					DATATABLE (
+					    "Metric", STRING,
+					    "Metric Order", INTEGER,
+					    {
+					        { "Incidents", 1 },
+					        { "Delay hours", 2 },
+					        { "Avg delay (min)", 3 },
+					        { "% severe", 4 }
+					    }
+					)
+
+	/// What-if parameter: how many minutes make a delay 'severe' (default 30).
+	table 'Severity Threshold'
+
+		column 'Severity Threshold'
+			formatString: 0
+			summarizeBy: none
+			sourceColumn: [Value]
+
+		partition 'Severity Threshold' = calculated
+			mode: import
+			source =
+					GENERATESERIES ( 5, 60, 5 )
+
+	/// Measure table. Measures are grouped in display folders.
+	table _Measures
+
+		column Value
+			isHidden
+			summarizeBy: none
+			sourceColumn: [Value]
+
+		partition _Measures = calculated
+			mode: import
+			source =
+					{ 1 }
+
+		/// Number of delay incidents.
+		measure Incidents = COUNTROWS ( Delays )
+			formatString: #,0
+			displayFolder: 1 Core
+
+		measure 'Total Delay (min)' = SUM ( Delays[Min Delay] )
+			formatString: #,0
+			displayFolder: 1 Core
+
+		/// Total minutes of delay to following streetcars, in hours.
+		measure 'Delay Hours' = DIVIDE ( [Total Delay (min)], 60 )
+			formatString: #,0
+			displayFolder: 1 Core
+
+		measure 'Avg Delay (min)' = AVERAGE ( Delays[Min Delay] )
+			formatString: 0.0
+			displayFolder: 1 Core
+
+		measure 'Median Delay (min)' = MEDIAN ( Delays[Min Delay] )
+			formatString: 0.0
+			displayFolder: 1 Core
+
+		/// 9 in 10 delays are this long or shorter.
+		measure 'P90 Delay (min)' = PERCENTILEX.INC ( Delays, Delays[Min Delay], 0.9 )
+			formatString: 0.0
+			displayFolder: 1 Core
+
+		measure 'Avg Gap (min)' = AVERAGE ( Delays[Min Gap] )
+			formatString: 0.0
+			displayFolder: 1 Core
+
+		/// Minutes that count as severe (what-if parameter, default 30).
+		measure 'Severity Threshold Value' = SELECTEDVALUE ( 'Severity Threshold'[Severity Threshold], 30 )
+			formatString: 0
+			displayFolder: 2 Severity
+
+		measure 'Severe Incidents' =
+				VAR _Threshold = [Severity Threshold Value]
+				RETURN
+				    CALCULATE ( [Incidents], Delays[Min Delay] >= _Threshold )
+			formatString: #,0
+			displayFolder: 2 Severity
+
+		/// Share of incidents at or above the severity threshold.
+		measure '% Severe' = DIVIDE ( [Severe Incidents], [Incidents] )
+			formatString: 0.0%
+			displayFolder: 2 Severity
+
+		measure 'Days in Period' = CALCULATE ( COUNTROWS ( 'Date' ), 'Date'[Is In Data] )
+			formatString: #,0
+			displayFolder: 3 Rates
+
+		/// Per calendar day with data, so partial years compare fairly.
+		measure 'Incidents per Day' = DIVIDE ( [Incidents], [Days in Period] )
+			formatString: 0.0
+			displayFolder: 3 Rates
+
+		measure 'Incidents PY' = CALCULATE ( [Incidents], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+			formatString: #,0
+			displayFolder: 4 Time intelligence
+
+		measure 'Incidents YoY %' =
+				VAR _Prior = [Incidents PY]
+				RETURN
+				    IF ( NOT ISBLANK ( _Prior ), DIVIDE ( [Incidents] - _Prior, _Prior ) )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: 4 Time intelligence
+
+		measure 'Incidents YTD' = CALCULATE ( [Incidents], CALCULATETABLE ( DATESYTD ( 'Date'[Date] ), 'Date'[Is In Data] ) )
+			formatString: #,0
+			displayFolder: 4 Time intelligence
+
+		/// Same days of the prior year, so a partial current year compares like-for-like.
+		measure 'Incidents PYTD' =
+				CALCULATE (
+				    [Incidents],
+				    SAMEPERIODLASTYEAR ( CALCULATETABLE ( DATESYTD ( 'Date'[Date] ), 'Date'[Is In Data] ) )
+				)
+			formatString: #,0
+			displayFolder: 4 Time intelligence
+
+		measure 'Incidents YTD vs PY %' = DIVIDE ( [Incidents YTD] - [Incidents PYTD], [Incidents PYTD] )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: 4 Time intelligence
+
+		measure 'Incidents Rolling 12M' = CALCULATE ( [Incidents], DATESINPERIOD ( 'Date'[Date], MAX ( 'Date'[Date] ), -12, MONTH ) )
+			formatString: #,0
+			displayFolder: 4 Time intelligence
+
+		measure 'Avg Delay YoY (min)' =
+				VAR _Prior = CALCULATE ( [Avg Delay (min)], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+				RETURN
+				    IF ( NOT ISBLANK ( _Prior ), [Avg Delay (min)] - _Prior )
+			formatString: +0.0;-0.0;0.0
+			displayFolder: 4 Time intelligence
+
+		/// Value of the metric picked in the Metric slicer.
+		measure 'Selected Metric' =
+				SWITCH (
+				    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+				    "Incidents", [Incidents],
+				    "Delay hours", [Delay Hours],
+				    "Avg delay (min)", [Avg Delay (min)],
+				    "% severe", [% Severe]
+				)
+			displayFolder: 5 Selector
+
+			formatStringDefinition =
+					SWITCH (
+					    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+					    "% severe", "0.0%",
+					    "Avg delay (min)", "0.0",
+					    "#,0"
+					)
+
+		/// Trailing 12-month average of the selected metric.
+		measure 'Selected Metric (12M avg)' =
+				CALCULATE (
+				    AVERAGEX ( VALUES ( 'Date'[Month Start] ), [Selected Metric] ),
+				    DATESINPERIOD ( 'Date'[Date], MAX ( 'Date'[Date] ), -12, MONTH )
+				)
+			displayFolder: 5 Selector
+
+			formatStringDefinition =
+					SWITCH (
+					    SELECTEDVALUE ( Metric[Metric], "Incidents" ),
+					    "% severe", "0.0%",
+					    "Avg delay (min)", "0.0",
+					    "#,0"
+					)
+
+		measure 'Route Rank (Delay Hours)' =
+				IF (
+				    HASONEVALUE ( Route[Route Name] ),
+				    RANKX ( ALL ( Route[Route Name] ), [Delay Hours], , DESC, DENSE )
+				)
+			formatString: 0
+			displayFolder: 6 Ranking
+
+		measure 'Selected Route' = SELECTEDVALUE ( Route[Route Name], "All routes" )
+			displayFolder: 7 Labels & formatting
+
+		measure 'Report Subtitle' =
+				VAR _Years =
+				    IF ( ISFILTERED ( 'Date'[Year] ), CONCATENATEX ( VALUES ( 'Date'[Year] ), 'Date'[Year], ", " ), "Jan 2014 ΓÇô Aug 2026" )
+				RETURN
+				    _Years & " ┬╖ " & FORMAT ( [Incidents], "#,0" ) & " incidents ┬╖ " & FORMAT ( [Delay Hours], "#,0" ) & " hours of delay"
+			displayFolder: 7 Labels & formatting
+
+		/// Red when incidents rose vs the prior year, green when they fell.
+		measure 'YoY Colour' = IF ( [Incidents YoY %] > 0, "#DA291C", "#00923F" )
+			displayFolder: 7 Labels & formatting
+
+		/// Share of incidents whose location could be placed on the map.
+		measure '% Incidents Mapped' = DIVIDE ( CALCULATE ( [Incidents], Location[Mapped] = "Yes" ), [Incidents] )
+			formatString: 0.0%
+			displayFolder: 8 Map
+
+		measure 'Last Data Date' = CALCULATE ( MAX ( Delays[Date] ), REMOVEFILTERS () )
+			formatString: mmm d, yyyy
+			displayFolder: 9 Data quality
+
+		measure '% Unknown Cause' = DIVIDE ( CALCULATE ( [Incidents], Cause[Cause Category] IN { "Unknown", "Other / Miscellaneous" } ), [Incidents] )
+			formatString: 0.0%
+			displayFolder: 9 Data quality
+
+	/// Calculation group: apply Prior Year / YoY to any measure.
+	table 'Time Comparison'
+
+		calculationGroup
+			precedence: 1
+
+			calculationItem Current = SELECTEDMEASURE ()
+				ordinal: 0
+
+			calculationItem 'Prior Year' = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+				ordinal: 1
+
+			calculationItem 'YoY Change' =
+					VAR _Current = SELECTEDMEASURE ()
+					VAR _Prior = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+					RETURN
+					    IF ( NOT ISBLANK ( _Prior ) && NOT ISBLANK ( _Current ), _Current - _Prior )
+				ordinal: 2
+
+			calculationItem 'YoY %' =
+					VAR _Current = SELECTEDMEASURE ()
+					VAR _Prior = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+					RETURN
+					    IF ( NOT ISBLANK ( _Prior ) && NOT ISBLANK ( _Current ), DIVIDE ( _Current - _Prior, _Prior ) )
+				ordinal: 3
+				formatStringDefinition = "+0.0%;-0.0%;0.0%"
+
+		column 'Time Comparison'
+			dataType: string
+			summarizeBy: none
+			sourceColumn: Name
+			sortByColumn: Ordinal
+
+		column Ordinal
+			dataType: int64
+			isHidden
+			formatString: 0
+			summarizeBy: sum
+			sourceColumn: Ordinal
+
+	relationship ea20b8b9-4b12-4169-b050-3e6853d2367e
+		fromColumn: Delays.Date
+		toColumn: Date.Date
+
+	relationship 3a3eb735-302a-4ee0-9628-db262f23fa59
+		fromColumn: Delays.Hour
+		toColumn: 'Time of Day'.Hour
+
+	relationship ef60f0ba-8c8e-41ac-a068-55039b902131
+		fromColumn: Delays.'Route Name'
+		toColumn: Route.'Route Name'
+
+	relationship 7a76c3cb-5703-4095-b164-9d0fc42fab9e
+		fromColumn: Delays.'Cause Category'
+		toColumn: Cause.'Cause Category'
+
+	relationship 3df5c6fd-b07e-4223-a214-29d0b9c42ebf
+		fromColumn: Delays.Location
+		toColumn: Location.Location

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "TTC Streetcar Delays"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ae973757-31f5-48f4-8e6b-42e2f5d77fd4"
+  }
+}

@@ -1,0 +1,111 @@
+/// Fact table: one row per streetcar delay incident, Jan 2014 ΓÇô Aug 2026.
+table Delays
+	lineageTag: eb54a71d-2196-41a7-8473-a93ce234aa11
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: yyyy-mm-dd
+		lineageTag: 3248f496-cc4c-48c5-b6bc-be187fb95342
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Hour
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: aa213dd1-4943-4beb-81ff-37ea2a6b5599
+		summarizeBy: none
+		sourceColumn: Hour
+
+	column 'Route Name'
+		dataType: string
+		isHidden
+		lineageTag: 006aaf8a-54bd-4af3-a7a8-72ea3f108005
+		summarizeBy: none
+		sourceColumn: Route Name
+
+	column Location
+		dataType: string
+		isHidden
+		lineageTag: c4093087-249a-4349-af9f-1a56968b57cd
+		summarizeBy: none
+		sourceColumn: Location
+
+	column 'Cause Category'
+		dataType: string
+		isHidden
+		lineageTag: 63370af8-1a38-4936-a572-1415b126b80c
+		summarizeBy: none
+		sourceColumn: Cause Category
+
+	/// TTC incident text before 2025; delay code (with description where known) from 2025.
+	column 'Incident Detail'
+		dataType: string
+		lineageTag: 84b434a5-92e8-4429-a2c7-5195b4431f34
+		summarizeBy: none
+		sourceColumn: Incident Detail
+
+	/// Minutes the following streetcar was delayed.
+	column 'Min Delay'
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: c813a87b-c1b7-474e-aeff-966e503327f6
+		summarizeBy: none
+		sourceColumn: Min Delay
+
+	/// Scheduled minutes between this streetcar and the one ahead.
+	column 'Min Gap'
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 4cefb157-655b-4822-881a-c1d763f1189e
+		summarizeBy: none
+		sourceColumn: Min Gap
+
+	column Direction
+		dataType: string
+		lineageTag: c65a195c-80f0-4db3-af55-af0ef0fa7869
+		summarizeBy: none
+		sourceColumn: Direction
+
+	column Vehicle
+		dataType: int64
+		formatString: 0
+		lineageTag: 0eac889f-d320-44db-9bcf-232c5dce06a1
+		summarizeBy: none
+		sourceColumn: Vehicle
+
+	/// Delay length bucket, added in Power Query.
+	column 'Delay Band'
+		dataType: string
+		lineageTag: c1c44431-73c7-45fd-bd58-f6656c7ab2c3
+		summarizeBy: none
+		sourceColumn: Delay Band
+		sortByColumn: 'Delay Band Order'
+
+	column 'Delay Band Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3f159697-14ae-4442-91d8-c5a0f6eb0275
+		summarizeBy: none
+		sourceColumn: Delay Band Order
+
+	partition Delays = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\ttc_streetcar_delays_clean.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Selected = Table.SelectColumns(Promoted, {"Date", "Hour", "Route Name", "Location", "Cause Category", "Incident Detail", "Min Delay", "Min Gap", "Direction", "Vehicle"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"Date", type date}, {"Hour", Int64.Type}, {"Route Name", type text}, {"Location", type text}, {"Cause Category", type text}, {"Incident Detail", type text}, {"Min Delay", Int64.Type}, {"Min Gap", Int64.Type}, {"Direction", type text}, {"Vehicle", Int64.Type}}, "en-US"),
+				    Trimmed = Table.TransformColumns(Typed, {{"Location", Text.Trim, type text}, {"Incident Detail", Text.Trim, type text}}),
+				    Banded = Table.AddColumn(Trimmed, "Delay Band", each if [Min Delay] = 0 then "0 min" else if [Min Delay] < 10 then "1ΓÇô9 min" else if [Min Delay] < 20 then "10ΓÇô19 min" else if [Min Delay] < 30 then "20ΓÇô29 min" else if [Min Delay] < 60 then "30ΓÇô59 min" else "60+ min", type text),
+				    BandOrder = Table.AddColumn(Banded, "Delay Band Order", each if [Min Delay] = 0 then 0 else if [Min Delay] < 10 then 1 else if [Min Delay] < 20 then 2 else if [Min Delay] < 30 then 3 else if [Min Delay] < 60 then 4 else 5, Int64.Type)
+				in
+				    BandOrder
+

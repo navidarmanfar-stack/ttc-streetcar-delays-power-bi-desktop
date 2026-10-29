@@ -1,0 +1,54 @@
+/// Streetcar routes: day (500s) and night (300s) service; 502 and 514 are retired.
+table Route
+	lineageTag: 9fc930f4-9a4d-49bd-97df-1e75f80f1df1
+
+	column 'Route Name'
+		dataType: string
+		isKey
+		lineageTag: 252e8eef-13a6-470f-a920-11126bc1dd73
+		summarizeBy: none
+		sourceColumn: Route Name
+		sortByColumn: 'Route Order'
+
+	column 'Route Number'
+		dataType: string
+		lineageTag: cb03c59c-c74f-4862-9212-f0738c9030d3
+		summarizeBy: none
+		sourceColumn: Route Number
+
+	column Route
+		dataType: string
+		lineageTag: ce5e43e0-4ac6-4be5-aae7-9253636e4565
+		summarizeBy: none
+		sourceColumn: Route
+
+	column Service
+		dataType: string
+		lineageTag: 560d46fe-6d53-40c1-ad2c-09cdee86a193
+		summarizeBy: none
+		sourceColumn: Service
+
+	column Status
+		dataType: string
+		lineageTag: 6a181902-a281-49a4-b1e2-bf26ac027ffc
+		summarizeBy: none
+		sourceColumn: Status
+
+	column 'Route Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a8e92a8a-5213-4e9b-a913-d45b398a2ece
+		summarizeBy: none
+		sourceColumn: Route Order
+
+	partition Route = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(Text.TrimEnd(DataFolder, {"\", "/"}) & "\dim_route.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"Route Name", type text}, {"Route Number", type text}, {"Route", type text}, {"Service", type text}, {"Status", type text}, {"Route Order", Int64.Type}}, "en-US")
+				in
+				    Typed
+

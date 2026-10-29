@@ -1,0 +1,29 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-CA
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["TMDLView_Desktop","DevMode"]
+
+annotation PBI_QueryOrder = ["Delays","Route","Cause","Location","DataFolder"]
+
+ref table Delays
+ref table Route
+ref table Cause
+ref table Location
+ref table Date
+ref table 'Time of Day'
+ref table Metric
+ref table 'Severity Threshold'
+ref table _Measures
+ref table 'Time Comparison'
+
+ref cultureInfo en-US
+

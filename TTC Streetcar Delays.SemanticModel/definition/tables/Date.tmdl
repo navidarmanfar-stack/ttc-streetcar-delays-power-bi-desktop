@@ -1,0 +1,93 @@
+/// Calendar table (DAX), full years covering the data. Marked as the date table.
+table Date
+	lineageTag: 637cb2ed-12c7-4127-ac01-4042deab82b4
+	dataCategory: Time
+
+	column Date
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: 998b685a-563b-4219-82f3-fd0509c9c5ca
+		summarizeBy: none
+		sourceColumn: [Date]
+
+	column Year
+		formatString: 0
+		lineageTag: 842d5b8a-872e-4302-bcc3-58625d4b3884
+		summarizeBy: none
+		sourceColumn: [Year]
+
+	column 'Month Number'
+		isHidden
+		formatString: 0
+		lineageTag: f49064d4-b045-4036-a38d-9711649bc652
+		summarizeBy: none
+		sourceColumn: [Month Number]
+
+	column Month
+		lineageTag: 9bab7218-c2ca-46b0-95db-8614d186ffe0
+		summarizeBy: none
+		sourceColumn: [Month]
+		sortByColumn: 'Month Number'
+
+	column 'Month Start'
+		formatString: mmm yyyy
+		lineageTag: 16d0e279-544a-4ca9-a608-6359c0cfcb0f
+		summarizeBy: none
+		sourceColumn: [Month Start]
+
+	column Quarter
+		lineageTag: c6a28f2d-ac08-44f1-a592-e3699cf18c26
+		summarizeBy: none
+		sourceColumn: [Quarter]
+
+	column 'Weekday Number'
+		isHidden
+		formatString: 0
+		lineageTag: 9b4c7212-da35-46e5-87a2-ee49acb716d7
+		summarizeBy: none
+		sourceColumn: [Weekday Number]
+
+	column Weekday
+		lineageTag: a0fed9a2-d2a8-4137-be78-1f58ed93ea7c
+		summarizeBy: none
+		sourceColumn: [Weekday]
+		sortByColumn: 'Weekday Number'
+
+	column 'Day Type'
+		lineageTag: 081664a4-1bae-4dc0-9ea1-e7d7f10f76d3
+		summarizeBy: none
+		sourceColumn: [Day Type]
+
+	column Season
+		lineageTag: 3c4252f0-0b06-47a0-a0a5-beba9e903deb
+		summarizeBy: none
+		sourceColumn: [Season]
+
+	/// TRUE up to the last date with data; keeps YTD comparisons like-for-like.
+	column 'Is In Data'
+		isHidden
+		lineageTag: 95def4e0-c31f-401c-bab3-7d1249b1566c
+		summarizeBy: none
+		sourceColumn: [Is In Data]
+
+	partition Date = calculated
+		mode: import
+		source =
+				VAR _First = DATE ( YEAR ( MIN ( Delays[Date] ) ), 1, 1 )
+				VAR _Last = DATE ( YEAR ( MAX ( Delays[Date] ) ), 12, 31 )
+				VAR _LastData = MAX ( Delays[Date] )
+				RETURN
+				    ADDCOLUMNS (
+				        CALENDAR ( _First, _Last ),
+				        "Year", YEAR ( [Date] ),
+				        "Month Number", MONTH ( [Date] ),
+				        "Month", FORMAT ( [Date], "mmm" ),
+				        "Month Start", DATE ( YEAR ( [Date] ), MONTH ( [Date] ), 1 ),
+				        "Quarter", "Q" & QUARTER ( [Date] ),
+				        "Weekday Number", WEEKDAY ( [Date], 2 ),
+				        "Weekday", FORMAT ( [Date], "ddd" ),
+				        "Day Type", IF ( WEEKDAY ( [Date], 2 ) >= 6, "Weekend", "Weekday" ),
+				        "Season", SWITCH ( TRUE (), MONTH ( [Date] ) IN { 12, 1, 2 }, "Winter", MONTH ( [Date] ) IN { 3, 4, 5 }, "Spring", MONTH ( [Date] ) IN { 6, 7, 8 }, "Summer", "Fall" ),
+				        "Is In Data", [Date] <= _LastData
+				    )
+

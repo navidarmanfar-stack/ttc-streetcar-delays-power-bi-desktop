@@ -1,0 +1,204 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "204a5967521724694500",
+  "position": {
+    "x": 16,
+    "y": 78,
+    "z": 5,
+    "height": 632,
+    "width": 820,
+    "tabOrder": 5
+  },
+  "visual": {
+    "visualType": "decompositionTreeVisual",
+    "query": {
+      "queryState": {
+        "Analyze": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Delay Hours"
+                }
+              },
+              "queryRef": "_Measures.Delay Hours",
+              "nativeQueryRef": "Delay Hours"
+            }
+          ]
+        },
+        "ExplainBy": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Cause"
+                    }
+                  },
+                  "Property": "Cause Group"
+                }
+              },
+              "queryRef": "Cause.Cause Group",
+              "nativeQueryRef": "Cause Group"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Cause"
+                    }
+                  },
+                  "Property": "Cause Category"
+                }
+              },
+              "queryRef": "Cause.Cause Category",
+              "nativeQueryRef": "Cause Category"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route"
+                    }
+                  },
+                  "Property": "Route Name"
+                }
+              },
+              "queryRef": "Route.Route Name",
+              "nativeQueryRef": "Route Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Time of Day"
+                    }
+                  },
+                  "Property": "Time Band"
+                }
+              },
+              "queryRef": "Time of Day.Time Band",
+              "nativeQueryRef": "Time Band"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Date"
+                    }
+                  },
+                  "Property": "Year"
+                }
+              },
+              "queryRef": "Date.Year",
+              "nativeQueryRef": "Year"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Cause"
+                    }
+                  },
+                  "Property": "TTC Controllable"
+                }
+              },
+              "queryRef": "Cause.TTC Controllable",
+              "nativeQueryRef": "TTC Controllable"
+            }
+          ]
+        }
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "ExplainBy"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Cause.Cause Group"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "Cause.Cause Category"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "Route.Route Name"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "Time of Day.Time Band"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "Date.Year"
+            ],
+            "isCollapsed": true
+          },
+          {
+            "queryRefs": [
+              "Cause.TTC Controllable"
+            ],
+            "isCollapsed": true
+          }
+        ],
+        "root": {
+          "isToggled": true
+        }
+      }
+    ],
+    "objects": {
+      "tree": [
+        {
+          "properties": {
+            "effectiveBarsPerLevel": {
+              "expr": {
+                "Literal": {
+                  "Value": "7L"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'What drives hours of delay?'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

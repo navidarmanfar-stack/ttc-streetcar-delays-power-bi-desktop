@@ -1,0 +1,40 @@
+/// Calculation group: apply Prior Year / YoY to any measure.
+table 'Time Comparison'
+	lineageTag: 796f4604-9ba4-4f59-a5fe-a99be737b761
+
+	calculationGroup
+		precedence: 1
+
+		calculationItem Current = SELECTEDMEASURE ()
+
+		calculationItem 'Prior Year' = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+
+		calculationItem 'YoY Change' =
+				VAR _Current = SELECTEDMEASURE ()
+				VAR _Prior = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+				RETURN
+				    IF ( NOT ISBLANK ( _Prior ) && NOT ISBLANK ( _Current ), _Current - _Prior )
+
+		calculationItem 'YoY %' =
+				VAR _Current = SELECTEDMEASURE ()
+				VAR _Prior = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+				RETURN
+				    IF ( NOT ISBLANK ( _Prior ) && NOT ISBLANK ( _Current ), DIVIDE ( _Current - _Prior, _Prior ) )
+
+			formatStringDefinition = "+0.0%;-0.0%;0.0%"
+
+	column 'Time Comparison'
+		dataType: string
+		lineageTag: eb712ef4-0ace-4a61-a189-c41f1a6763d7
+		summarizeBy: none
+		sourceColumn: Name
+		sortByColumn: Ordinal
+
+	column Ordinal
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f7b5e5c7-ccc8-4bd6-8309-b65db72d111c
+		summarizeBy: sum
+		sourceColumn: Ordinal
+

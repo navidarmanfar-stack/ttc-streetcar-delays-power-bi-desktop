@@ -1,0 +1,20 @@
+relationship ea20b8b9-4b12-4169-b050-3e6853d2367e
+	fromColumn: Delays.Date
+	toColumn: Date.Date
+
+relationship 3a3eb735-302a-4ee0-9628-db262f23fa59
+	fromColumn: Delays.Hour
+	toColumn: 'Time of Day'.Hour
+
+relationship ef60f0ba-8c8e-41ac-a068-55039b902131
+	fromColumn: Delays.'Route Name'
+	toColumn: Route.'Route Name'
+
+relationship 7a76c3cb-5703-4095-b164-9d0fc42fab9e
+	fromColumn: Delays.'Cause Category'
+	toColumn: Cause.'Cause Category'
+
+relationship 3df5c6fd-b07e-4223-a214-29d0b9c42ebf
+	fromColumn: Delays.Location
+	toColumn: Location.Location
+

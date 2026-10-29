@@ -1,0 +1,49 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "ec157c5367c71596a427",
+  "displayName": "Route detail",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "1db0ea4f83e2b5529055",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Route"
+              }
+            },
+            "Property": "Route Name"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      }
+    ]
+  },
+  "pageBinding": {
+    "name": "87d85bc75c479bbc5e30",
+    "type": "Drillthrough",
+    "parameters": [
+      {
+        "name": "832a4e4d51040cc2e3d3",
+        "boundFilter": "1db0ea4f83e2b5529055",
+        "asAggregation": false,
+        "qnaSingleSelectRequired": false,
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Route"
+              }
+            },
+            "Property": "Route Name"
+          }
+        }
+      }
+    ]
+  }
+}

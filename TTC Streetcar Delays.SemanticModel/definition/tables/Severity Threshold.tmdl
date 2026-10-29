@@ -1,0 +1,14 @@
+/// What-if parameter: how many minutes make a delay 'severe' (default 30).
+table 'Severity Threshold'
+	lineageTag: f73d7630-83ad-4e78-b3ea-a8817d33ea6a
+
+	column 'Severity Threshold'
+		formatString: 0
+		lineageTag: 2aa23eea-220f-46d9-9b5c-d1fb6da398c7
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition 'Severity Threshold' = calculated
+		mode: import
+		source = GENERATESERIES ( 5, 60, 5 )
+
